@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configuration 定義日誌設定
+	- scan : 若文件發生改變會自動重新加載，預設為true
+	- scanPeriod : 設定重新加載的掃描時間，只有在scan=true時使用
+	- debug : 印出logback的執行狀態，預設為false -->
+<Configuration>
+    <!-- 日誌級別: TRACE < DEBUG < INFO < WARN < ERROR < FATAL ，設定時包含當下設定級別以上 -->
+    <!-- 1. <contextName> : 設定上下文名稱 -->
+    <!-- 2. <Property> : 參數設定 -->
+    <property name="LOG_PATH" value="/opt/log/logapps"></property>
+    <property name="PROJ_NAME" value="handleData"></property>
+    <!-- 3. <appender> : 格式化日誌輸出的自定義項目
+            - name : 名稱
+            - class : 輸出策略
+            - Tag : <encoder> : 日誌編碼
+                        <pattern> : 表示法，ex: %d{yyyy-MM-dd HH:mm:ss} %contextName [%thread] %-5level %logger{36} - %msg%n
+                            - %d{yyyy-MM-dd HH:mm:ss} : 輸出時間
+                            - %class{0}:%line : 紀錄日誌的Class與行數
+                            - %thread : 輸出日誌的thread名稱
+                            - %-5level : 日誌級別，使用5 bytes 靠左
+                            - %logger{36} : 日誌輸出者的名字,{0} 最右邊的點(.)後之字串 {其他數字} 點之前的字串,{不輸入} 完整名稱
+                            - %msg : 日誌訊息
+                            - %n : 換行符號
+                        <charset> : 編碼
+                    <filter> : 定義系統攔截器[ThresholdFilter]，過濾指定層級以下日誌不輸出
+                    <rollingPolicy> : 切割日誌，避免單一日誌過肥大
+                        - <maxHistory> : 保留日誌的天數
+                        - <totalSizeCap> : 若產出log已超過設定上限大小，就會刪除舊的日誌 -->
+    <!-- 檔案log 輸出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${PROJ_NAME}/${PROJ_NAME}.log</file>
+        <encoder>
+            <Pattern>[%d{yyyy-MM-dd HH:mm:ss}] %-5level\(%class{0}:%line\) - [%logger{36}] - %msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${PROJ_NAME}//%d{yyyy/MM, aux}/${PROJ_NAME}_%d{yyyyMMdd}.log</fileNamePattern>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+    <!-- console log 輸出 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>[%green(%d{yyyy-MM-dd HH:mm:ss})] [%green(%thread)] %highlight(%-5level\(%class{0}:%line\)) - [%logger{36}] - %msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+    <!-- 4. <root> : 指定輸出日誌
+            - level : 指定日誌輸出級別
+            - Tag : <appender-ref> : 指定已設定的 <appender> -->
+    <root level="INFO">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
+    </root>
+    <!-- 5. <Loggers> : 指定特定的class做日誌輸出
+             - Tag : <Logger> 設定單一指定對象
+                     - name : 指定Class
+                     - level : 指定日誌輸出級別
+                     - additivity : 是否向上層(root)傳遞日誌訊息，預設為true
+                     > 狀況1 : 不配置level、additivity，則使用<root>設定的<appender-ref>做輸出
+                     > 狀況2 : 配置level、additivity，則使用<Logger>裡定義的<appender-ref>做輸出，若又指定additivity=true，則輸出兩次
+
+            <Loggers>
+                1. <Logger></Logger>
+                2. <Logger level="" additivity=false><appender-ref></<appender-ref></Logger>
+            </Loggers> -->
+    <!-- 6. <springProfile> : 多環境輸出配置，透過指定 –spring.profiles.active 的方式
+            - name : 定義環境參數，以,間隔
+            > 檔名必須使用 logback-spring.xml
+
+            <springProfile><Logger></Logger></springProfile> -->
+</Configuration>
